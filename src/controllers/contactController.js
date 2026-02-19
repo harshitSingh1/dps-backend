@@ -1,31 +1,20 @@
-import nodemailer from "nodemailer";
 import Contact from "../models/Contact.js";
+import { Resend } from "resend";
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  connectionTimeout: 10000,
-});
-
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const createContact = async (req, res) => {
   try {
     const { name, email, subject, message } = req.body;
 
-    // Validation
     if (!name || !email || !subject || !message) {
       return res.status(400).json({
         success: false,
-        message: "All fields are required",
+        message: "All fields required",
       });
     }
 
-    // Save to MongoDB
+    // 1️⃣ Save to MongoDB
     const savedContact = await Contact.create({
       name,
       email,
@@ -33,51 +22,38 @@ export const createContact = async (req, res) => {
       message,
     });
 
-    // Send email to YOU (admin)
-    await transporter.sendMail({
-      from: `"DailyPuzzleSolve Contact" <${process.env.EMAIL_USER}>`,
-      to: process.env.ADMIN_EMAIL,
-      subject: `📩 New Contact: ${subject}`,
-      html: `
-        <h2>New Contact Message</h2>
-        <p><b>Name:</b> ${name}</p>
-        <p><b>Email:</b> ${email}</p>
-        <p><b>Subject:</b> ${subject}</p>
-        <p><b>Message:</b></p>
-        <p>${message}</p>
-        <hr/>
-        <small>Saved in MongoDB ✔</small>
-      `,
-    });
+    // 2️⃣ Send Email via Resend
+    try {
+      await resend.emails.send({
+        from: "DailyPuzzleSolve <onboarding@resend.dev>",
+        to: process.env.ADMIN_EMAIL,
+        subject: `📩 New Contact: ${subject}`,
+        html: `
+          <h2>New Contact Message</h2>
+          <p><b>Name:</b> ${name}</p>
+          <p><b>Email:</b> ${email}</p>
+          <p><b>Subject:</b> ${subject}</p>
+          <p><b>Message:</b></p>
+          <p>${message}</p>
+        `,
+      });
 
-    // Auto reply to user (professional touch)
-    await transporter.sendMail({
-      from: `"DailyPuzzleSolve" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "We received your message ✔",
-      html: `
-        <p>Hi ${name},</p>
-        <p>Thanks for contacting us. We received your message and will reply soon.</p>
-        <br/>
-        <p><b>Your message:</b></p>
-        <p>${message}</p>
-        <br/>
-        <p>— Team DailyPuzzleSolve</p>
-      `,
-    });
+      console.log("✅ Email sent via Resend");
+    } catch (mailError) {
+      console.error("❌ Email failed:", mailError.message);
+    }
 
     return res.json({
       success: true,
-      message: "Message saved & email sent",
+      message: "Message saved successfully",
       data: savedContact,
     });
-
-  } catch (error) {
-    console.error("Contact error:", error);
+  } catch (err) {
+    console.error("Contact error:", err);
 
     return res.status(500).json({
       success: false,
-      message: "Failed to send message",
+      message: "Server error",
     });
   }
 };
