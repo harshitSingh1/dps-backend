@@ -1,14 +1,17 @@
 import nodemailer from "nodemailer";
 import Contact from "../models/Contact.js";
 
-// Gmail transporter
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  connectionTimeout: 10000,
 });
+
 
 export const createContact = async (req, res) => {
   try {
