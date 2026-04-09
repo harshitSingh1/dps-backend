@@ -4,7 +4,15 @@ const puzzleSchema = new mongoose.Schema({
   heading: { type: String, required: true },
   gameType: {
     type: String,
-    enum: ["Pinpoint", "Queens", "Tango", "Crossclimb", "Zip"],
+    enum: [
+      "Pinpoint", 
+      "Queens", 
+      "Tango", 
+      "Crossclimb", 
+      "Zip",
+      "Mini Sudoku",
+      "Patches"
+    ],
     required: true,
   },
   ytVideo: { type: String, default: "" },
