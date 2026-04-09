@@ -15,13 +15,16 @@ router.get("/", async (req, res) => {
 
     // If game provided → filter by heading keyword
     if (game) {
-      const map = {
+const map = {
+        "mini-sudoku": "Sudoku",
         pinpoint: "Pinpoint",
         queens: "Queens",
         tango: "Tango",
         crossclimb: "Crossclimb",
         zip: "Zip",
+        patches: "Patches",
       };
+
 
       const keyword = map[game.toLowerCase()];
 
@@ -32,7 +35,7 @@ router.get("/", async (req, res) => {
 
     const puzzles = await Puzzle.find(query)
       .sort({ createdAt: -1 })
-      .limit(20)
+
       .lean();
 
     res.json({
